@@ -79,18 +79,34 @@ class HomeScreen extends StatelessWidget {
                   child: _buildFilterInfo(eventController, theme),
                 ),
 
-              // Featured upcoming event (next event)
-              if (upcomingEvents.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: CountdownCard(
-                      event: upcomingEvents.first,
-                      onTap: () => _navigateToEventDetail(upcomingEvents.first),
-                      showDetails: true,
-                    ),
-                  ),
-                ),
+              // Featured upcoming event (next event) or selected event
+              SliverToBoxAdapter(
+                child: Obx(() {
+                  final selectedEvent = eventController.selectedEvent;
+                  final displayEvent =
+                      selectedEvent ??
+                      (upcomingEvents.isNotEmpty ? upcomingEvents.first : null);
+
+                  if (displayEvent != null) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Column(
+                        children: [
+                          // Header showing if it's selected or upcoming
+                          if (selectedEvent != null)
+
+                          CountdownCard(
+                            event: displayEvent,
+                            onTap: () => _navigateToEventDetail(displayEvent),
+                            showDetails: true,
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+              ),
 
               // Today's events section
               if (eventController.todayEvents.isNotEmpty)
@@ -142,7 +158,7 @@ class HomeScreen extends StatelessWidget {
                   final event = events[index];
                   return EventTile(
                     event: event,
-                    //onTap: () => _navigateToEventDetail(event),
+                    onTap: () => eventController.selectEvent(event),
                     onEdit: () => _navigateToEditEvent(event),
                     onDelete: () => _deleteEvent(event, eventController),
                   );
@@ -204,7 +220,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 25),
-            
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -225,11 +241,12 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 15),
-                Text("Add Event Text",
-                style: TextStyle(fontWeight: FontWeight.bold),)
-                
+                Text(
+                  "Add Event Text",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ],
-            )
+            ),
           ],
         ),
       ),

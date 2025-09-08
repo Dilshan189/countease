@@ -11,6 +11,7 @@ class EventController extends GetxController {
   final RxString _searchQuery = ''.obs;
   final Rx<EventType?> _filterType = Rx<EventType?>(null);
   final RxBool _showPastEvents = false.obs;
+  final Rx<Event?> _selectedEvent = Rx<Event?>(null);
 
   // Getters
   List<Event> get events => _events;
@@ -18,6 +19,7 @@ class EventController extends GetxController {
   String get searchQuery => _searchQuery.value;
   EventType? get filterType => _filterType.value;
   bool get showPastEvents => _showPastEvents.value;
+  Event? get selectedEvent => _selectedEvent.value;
 
   // Filtered events based on search and filter criteria
   List<Event> get filteredEvents {
@@ -383,5 +385,15 @@ class EventController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
     }
+  }
+
+  // Select an event to show details
+  void selectEvent(Event? event) {
+    _selectedEvent.value = event;
+  }
+
+  // Clear selected event
+  void clearSelectedEvent() {
+    _selectedEvent.value = null;
   }
 }
