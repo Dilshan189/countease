@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/event_model.dart';
 import '../services/db_service.dart';
@@ -129,12 +130,26 @@ class EventController extends GetxController {
     try {
       _isLoading.value = true;
 
+      // Request notification permissions first if notifications are enabled
+      if (event.notificationEnabled) {
+        try {
+          await NotificationService.requestPermissions();
+        } catch (e) {
+          debugPrint('Permission request failed: $e');
+        }
+      }
+
       // Add to database
       await DatabaseService.addEvent(event);
 
       // Schedule notifications
       if (event.notificationEnabled) {
-        await NotificationService.scheduleEventNotifications(event);
+        try {
+          await NotificationService.scheduleEventNotifications(event);
+        } catch (e) {
+          debugPrint('Notification scheduling failed: $e');
+          // Don't fail event creation if notifications fail
+        }
       }
 
       // Add to local list
@@ -170,7 +185,12 @@ class EventController extends GetxController {
       // Update notifications
       await NotificationService.cancelEventNotifications(event.id);
       if (event.notificationEnabled) {
-        await NotificationService.scheduleEventNotifications(event);
+        try {
+          await NotificationService.scheduleEventNotifications(event);
+        } catch (e) {
+          debugPrint('Notification scheduling failed: $e');
+          // Don't fail event update if notifications fail
+        }
       }
 
       // Update in local list

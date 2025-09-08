@@ -15,6 +15,7 @@ class DatabaseService {
     // Register adapters
     Hive.registerAdapter(EventAdapter());
     Hive.registerAdapter(EventTypeAdapter());
+    Hive.registerAdapter(TimeOfDayAdapter());
 
     // Open boxes
     _eventsBox = await Hive.openBox<Event>(_eventsBoxName);

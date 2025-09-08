@@ -21,6 +21,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
   final _eventController = Get.find<EventController>();
 
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
+  TimeOfDay? _selectedTime;
   EventType _selectedType = EventType.custom;
   bool _repeatYearly = false;
   bool _notificationEnabled = true;
@@ -41,6 +42,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
     _titleController.text = event.title;
     _descriptionController.text = event.description ?? '';
     _selectedDate = event.eventDate;
+    _selectedTime = event.eventTime;
     _selectedType = event.type;
     _repeatYearly = event.repeatYearly;
     _notificationEnabled = event.notificationEnabled;
@@ -117,6 +119,9 @@ class _AddEventScreenState extends State<AddEventScreen> {
               _buildSectionTitle('Event Date', theme),
               const SizedBox(height: 16),
               _buildDateSelector(theme),
+
+              const SizedBox(height: 16),
+              _buildTimeSelector(theme),
 
               const SizedBox(height: 24),
 
@@ -206,6 +211,45 @@ class _AddEventScreenState extends State<AddEventScreen> {
             },
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTimeSelector(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: theme.colorScheme.outline),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.access_time),
+        title: const Text('Event Time (Optional)'),
+        subtitle: Text(
+          _selectedTime != null
+              ? _selectedTime!.format(context)
+              : 'No specific time set',
+          style: TextStyle(
+            color: _selectedTime != null
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurface.withOpacity(0.6),
+            fontWeight: _selectedTime != null
+                ? FontWeight.w600
+                : FontWeight.normal,
+          ),
+        ),
+        trailing: _selectedTime != null
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.clear, size: 16),
+                    onPressed: () => setState(() => _selectedTime = null),
+                  ),
+                  const Icon(Icons.arrow_forward_ios, size: 16),
+                ],
+              )
+            : const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: _selectTime,
       ),
     );
   }
@@ -307,6 +351,22 @@ class _AddEventScreenState extends State<AddEventScreen> {
     }
   }
 
+  Future<void> _selectTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime ?? TimeOfDay.now(),
+      helpText: 'Select Event Time',
+      cancelText: 'Cancel',
+      confirmText: 'Select',
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedTime = picked;
+      });
+    }
+  }
+
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -341,6 +401,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
             : _eventController.generateEventId(),
         title: _titleController.text.trim(),
         eventDate: _selectedDate,
+        eventTime: _selectedTime,
         type: _selectedType,
         repeatYearly: _repeatYearly,
         notificationEnabled: _notificationEnabled,
@@ -368,6 +429,9 @@ class _AddEventScreenState extends State<AddEventScreen> {
           backgroundColor: Colors.green,
           colorText: Colors.white,
         );
+      } else {
+        // If event creation failed, show option to create without notifications
+        _showCreateWithoutNotificationsDialog();
       }
     } catch (e) {
       Get.snackbar(
@@ -438,6 +502,86 @@ class _AddEventScreenState extends State<AddEventScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  void _showCreateWithoutNotificationsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Notification Issue'),
+        content: const Text(
+          'There was an issue setting up notifications for this event. '
+          'Would you like to create the event without notifications?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _createEventWithoutNotifications();
+            },
+            child: const Text('Create Without Notifications'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _createEventWithoutNotifications() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final event = Event(
+        id: _isEditing
+            ? widget.eventToEdit!.id
+            : _eventController.generateEventId(),
+        title: _titleController.text.trim(),
+        eventDate: _selectedDate,
+        eventTime: _selectedTime,
+        type: _selectedType,
+        repeatYearly: _repeatYearly,
+        notificationEnabled: false, // Disable notifications
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        createdAt: _isEditing ? widget.eventToEdit!.createdAt : DateTime.now(),
+      );
+
+      bool success;
+      if (_isEditing) {
+        success = await _eventController.updateEvent(event);
+      } else {
+        success = await _eventController.addEvent(event);
+      }
+
+      if (success) {
+        Get.back();
+        Get.snackbar(
+          'Success',
+          '${_isEditing ? "Event updated" : "Event created"} successfully! (Notifications disabled)',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to save event: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -57,11 +59,19 @@ class NotificationService {
 
     bool? result = false;
     if (defaultTargetPlatform == TargetPlatform.android) {
-      result = await _notifications
+      final androidImplementation = _notifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.requestNotificationsPermission();
+          >();
+
+      // Request exact alarm permission for Android 12+
+      try {
+        await androidImplementation?.requestExactAlarmsPermission();
+      } catch (e) {
+        debugPrint('Exact alarm permission request failed: $e');
+      }
+
+      result = await androidImplementation?.requestNotificationsPermission();
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       result = await _notifications
           .resolvePlatformSpecificImplementation<
@@ -118,40 +128,52 @@ class NotificationService {
     if (!_initialized) await init();
     if (!DatabaseService.getNotificationsEnabled()) return;
 
-    const AndroidNotificationDetails androidDetails =
-    AndroidNotificationDetails(
-      'countease_channel',
-      'CountEase Notifications',
-      channelDescription: 'Notifications for countdown events',
-      importance: Importance.high,
-      priority: Priority.high,
-      showWhen: true,
-    );
+    try {
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+            'countease_channel',
+            'CountEase Notifications',
+            channelDescription: 'Notifications for countdown events',
+            importance: Importance.high,
+            priority: Priority.high,
+            showWhen: true,
+          );
 
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+      const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
 
-    const NotificationDetails details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+      const NotificationDetails details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
 
-    await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledDate, tz.local),
-      details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.dateAndTime,
-      payload: payload,
-    );
+      await _notifications.zonedSchedule(
+        id,
+        title,
+        body,
+        tz.TZDateTime.from(scheduledDate, tz.local),
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexact,
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('Failed to schedule notification: $e');
+      // Fall back to showing immediate notification if scheduling fails
+      if (scheduledDate.difference(DateTime.now()).inMinutes <= 1) {
+        await showNotification(
+          id: id,
+          title: title,
+          body: body,
+          payload: payload,
+        );
+      }
+    }
   }
 
-    // Schedule notifications for an event
+  // Schedule notifications for an event
   static Future<void> scheduleEventNotifications(Event event) async {
     if (!event.notificationEnabled) return;
 
