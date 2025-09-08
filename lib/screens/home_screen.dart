@@ -208,11 +208,23 @@ class HomeScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add,
-                  color: Colors.blue,
-                  size: 40,
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.rectangle,
+                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withOpacity(0.2),
+                      width: 2,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.add,
+                    size: 25,
+                    color: theme.colorScheme.primary.withOpacity(0.7),
+                  ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 15),
                 Text("Add Event Text",
                 style: TextStyle(fontWeight: FontWeight.bold),)
                 
