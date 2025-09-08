@@ -119,14 +119,14 @@ class NotificationService {
     if (!DatabaseService.getNotificationsEnabled()) return;
 
     const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-          'countease_channel',
-          'CountEase Notifications',
-          channelDescription: 'Notifications for countdown events',
-          importance: Importance.high,
-          priority: Priority.high,
-          showWhen: true,
-        );
+    AndroidNotificationDetails(
+      'countease_channel',
+      'CountEase Notifications',
+      channelDescription: 'Notifications for countdown events',
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+    );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
       presentAlert: true,
@@ -146,13 +146,12 @@ class NotificationService {
       tz.TZDateTime.from(scheduledDate, tz.local),
       details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.dateAndTime,
       payload: payload,
     );
   }
 
-  // Schedule notifications for an event
+    // Schedule notifications for an event
   static Future<void> scheduleEventNotifications(Event event) async {
     if (!event.notificationEnabled) return;
 

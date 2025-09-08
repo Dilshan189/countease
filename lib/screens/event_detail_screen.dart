@@ -125,7 +125,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   Widget _buildHeroSection(ThemeData theme) {
     return Container(
-      height: 400,
+      height: 480,
       decoration: BoxDecoration(gradient: _getEventGradient()),
       child: SafeArea(
         child: Padding(
@@ -133,8 +133,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 60), // Space for app bar
-              // Event Type Emoji
               Center(
                 child: Text(
                   widget.event.typeEmoji,
