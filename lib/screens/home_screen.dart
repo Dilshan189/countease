@@ -171,10 +171,21 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.event_available,
-              size: 80,
-              color: theme.colorScheme.primary.withOpacity(0.5),
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(0.2),
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                Icons.event_available,
+                size: 80,
+                color: theme.colorScheme.primary.withOpacity(0.7),
+              ),
             ),
             const SizedBox(height: 24),
             Text(
@@ -192,12 +203,21 @@ class HomeScreen extends StatelessWidget {
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => _navigateToAddEvent(),
-              icon: const Icon(Icons.add),
-              label: const Text('Add Your First Event'),
-            ),
+            const SizedBox(height: 25),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add,
+                  color: Colors.blue,
+                  size: 40,
+                ),
+                SizedBox(width: 8),
+                Text("Add Event Text",
+                style: TextStyle(fontWeight: FontWeight.bold),)
+                
+              ],
+            )
           ],
         ),
       ),
