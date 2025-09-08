@@ -1,3 +1,5 @@
+import 'package:countease/controllers/navigation_controller.dart';
+import 'package:countease/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -29,8 +31,9 @@ class CountEaseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize EventController
+    // Initialize Controllers
     Get.put(EventController());
+    Get.put(NavigationController());
 
     return GetMaterialApp(
       title: 'CountEase',
@@ -40,7 +43,7 @@ class CountEaseApp extends StatelessWidget {
       themeMode: DatabaseService.getDarkMode()
           ? ThemeMode.dark
           : ThemeMode.light,
-      home: const HomeScreen(),
+      home: const SplashScreen(),
       defaultTransition: Transition.cupertino,
       transitionDuration: const Duration(milliseconds: 300),
     );

@@ -142,24 +142,23 @@ class HomeScreen extends StatelessWidget {
                   final event = events[index];
                   return EventTile(
                     event: event,
-                    onTap: () => _navigateToEventDetail(event),
+                    //onTap: () => _navigateToEventDetail(event),
                     onEdit: () => _navigateToEditEvent(event),
                     onDelete: () => _deleteEvent(event, eventController),
                   );
                 }, childCount: events.length),
               ),
 
-              // Bottom padding for FAB
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              // Bottom padding for navigation bar
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: MediaQuery.of(context).padding.bottom + 90,
+                ),
+              ),
             ],
           ),
         );
       }),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _navigateToAddEvent(),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Event'),
-      ),
     );
   }
 
