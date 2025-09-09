@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../controllers/event_controller.dart';
 import '../widgets/countdown_card.dart';
@@ -28,6 +29,14 @@ class HomeScreen extends StatelessWidget {
             icon: const Icon(Icons.search),
             onPressed: () => _showSearchDialog(context, eventController),
           ),
+          if (kDebugMode)
+            IconButton(
+              icon: const Icon(Icons.bug_report),
+              onPressed: () {
+                eventController.debugControllerState();
+                eventController.refreshEvents();
+              },
+            ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) => _handleMenuAction(value, eventController),
@@ -64,6 +73,18 @@ class HomeScreen extends StatelessWidget {
         final events = eventController.filteredEvents;
         final upcomingEvents = eventController.upcomingEvents;
 
+        // Debug information for troubleshooting
+        if (kDebugMode) {
+          print('HomeScreen: Total events: ${eventController.events.length}');
+          print('HomeScreen: Filtered events: ${events.length}');
+          print('HomeScreen: Upcoming events: ${upcomingEvents.length}');
+          print('HomeScreen: Search query: "${eventController.searchQuery}"');
+          print('HomeScreen: Filter type: ${eventController.filterType}');
+          print(
+            'HomeScreen: Show past events: ${eventController.showPastEvents}',
+          );
+        }
+
         if (events.isEmpty) {
           return _buildEmptyState(context);
         }
@@ -94,12 +115,11 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           // Header showing if it's selected or upcoming
                           if (selectedEvent != null)
-
-                          CountdownCard(
-                            event: displayEvent,
-                            onTap: () => _navigateToEventDetail(displayEvent),
-                            showDetails: true,
-                          ),
+                            CountdownCard(
+                              event: displayEvent,
+                              onTap: () => _navigateToEventDetail(displayEvent),
+                              showDetails: true,
+                            ),
                         ],
                       ),
                     );
@@ -133,19 +153,59 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      TextButton.icon(
-                        icon: Icon(
-                          eventController.showPastEvents
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          size: 16,
+                      Obx(
+                        () => Container(
+                          decoration: BoxDecoration(
+                            color: eventController.showPastEvents
+                                ? theme.colorScheme.primaryContainer
+                                : theme.colorScheme.surfaceVariant,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: eventController.showPastEvents
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.outline,
+                              width: 1,
+                            ),
+                          ),
+                          child: TextButton.icon(
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            icon: Icon(
+                              eventController.showPastEvents
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              size: 18,
+                              color: eventController.showPastEvents
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                            label: Text(
+                              eventController.showPastEvents
+                                  ? 'Hide Past'
+                                  : 'Show Past',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: eventController.showPastEvents
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            onPressed: () {
+                              eventController.toggleShowPastEvents();
+                              if (kDebugMode) {
+                                print('Toggle button pressed. New state: ${eventController.showPastEvents}');
+                              }
+                            },
+                          ),
                         ),
-                        label: Text(
-                          eventController.showPastEvents
-                              ? 'Hide Past'
-                              : 'Show Past',
-                        ),
-                        onPressed: eventController.toggleShowPastEvents,
                       ),
                     ],
                   ),
@@ -205,7 +265,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'No Events Yet',
+              'Not Event Yet',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.onSurface.withOpacity(0.7),
@@ -213,7 +273,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Start by adding your first countdown event!\nBirthdays, exams, special occasions - track them all.',
+              'ඔසුගෙ පළමු countdown event එක එකතු කරන්න!\nපෙනිදින, පරීක්ෂා, විශෙෂ අවස්තා - සියල්ල ට්‍රැක් කරන්න.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
@@ -242,7 +302,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 SizedBox(width: 15),
                 Text(
-                  "Add Event Text",
+                  "ඉවෙන්ට් එකතු කරන්න",
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ],

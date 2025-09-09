@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/event_model.dart';
 
@@ -10,16 +11,51 @@ class DatabaseService {
 
   // Initialize Hive database
   static Future<void> init() async {
-    await Hive.initFlutter();
+    try {
+      if (kDebugMode) {
+        print('DatabaseService: Starting initialization...');
+      }
 
-    // Register adapters
-    Hive.registerAdapter(EventAdapter());
-    Hive.registerAdapter(EventTypeAdapter());
-    Hive.registerAdapter(TimeOfDayAdapter());
+      await Hive.initFlutter();
 
-    // Open boxes
-    _eventsBox = await Hive.openBox<Event>(_eventsBoxName);
-    _settingsBox = await Hive.openBox(_settingsBoxName);
+      if (kDebugMode) {
+        print('DatabaseService: Hive initialized');
+      }
+
+      // Register adapters
+      if (!Hive.isAdapterRegistered(1)) {
+        Hive.registerAdapter(EventAdapter());
+        if (kDebugMode) print('DatabaseService: EventAdapter registered');
+      }
+
+      if (!Hive.isAdapterRegistered(2)) {
+        Hive.registerAdapter(EventTypeAdapter());
+        if (kDebugMode) print('DatabaseService: EventTypeAdapter registered');
+      }
+
+      if (!Hive.isAdapterRegistered(3)) {
+        Hive.registerAdapter(TimeOfDayAdapter());
+        if (kDebugMode) print('DatabaseService: TimeOfDayAdapter registered');
+      }
+
+      // Open boxes
+      _eventsBox = await Hive.openBox<Event>(_eventsBoxName);
+      _settingsBox = await Hive.openBox(_settingsBoxName);
+
+      if (kDebugMode) {
+        print('DatabaseService: Boxes opened successfully');
+        print(
+          'DatabaseService: Events box has ${_eventsBox?.length ?? 0} items',
+        );
+        debugDatabaseState();
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('DatabaseService: Initialization failed: $e');
+        print('Stack trace: $stackTrace');
+      }
+      rethrow;
+    }
   }
 
   // Getters for boxes
@@ -47,7 +83,39 @@ class DatabaseService {
   }
 
   static List<Event> getAllEvents() {
-    return eventsBox.values.toList();
+    try {
+      if (_eventsBox == null) {
+        if (kDebugMode) {
+          print(
+            'DatabaseService: Events box is null, attempting to reinitialize...',
+          );
+        }
+
+        // Try to get box if it exists but wasn't assigned
+        if (Hive.isBoxOpen(_eventsBoxName)) {
+          _eventsBox = Hive.box<Event>(_eventsBoxName);
+        } else {
+          throw Exception('Events box not initialized and not available');
+        }
+      }
+
+      final events = _eventsBox!.values.toList();
+
+      if (kDebugMode) {
+        print(
+          'DatabaseService: Retrieved ${events.length} events from Hive box',
+        );
+      }
+
+      return events;
+    } catch (e) {
+      if (kDebugMode) {
+        print('DatabaseService: Error getting all events: $e');
+      }
+
+      // Return empty list instead of throwing to prevent app crash
+      return <Event>[];
+    }
   }
 
   static Event? getEvent(String id) {
@@ -213,5 +281,27 @@ class DatabaseService {
   static Future<void> close() async {
     await _eventsBox?.close();
     await _settingsBox?.close();
+  }
+
+  // Debug method to check database state
+  static void debugDatabaseState() {
+    if (kDebugMode) {
+      print('=== DatabaseService Debug Info ===');
+      print('Events box initialized: ${_eventsBox != null}');
+      print('Settings box initialized: ${_settingsBox != null}');
+
+      if (_eventsBox != null) {
+        print('Events box is open: ${_eventsBox!.isOpen}');
+        print('Events count: ${_eventsBox!.length}');
+        print('Events box name: ${_eventsBox!.name}');
+      }
+
+      print('Available box names: Not available in this Hive version');
+      print('Is events box open in Hive: ${Hive.isBoxOpen(_eventsBoxName)}');
+      print(
+        'Is settings box open in Hive: ${Hive.isBoxOpen(_settingsBoxName)}',
+      );
+      print('==================================');
+    }
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import '../models/event_model.dart';
-import '../controllers/event_controller.dart';
 
 class EventTile extends StatelessWidget {
   final Event event;
@@ -74,7 +73,7 @@ class EventTile extends StatelessWidget {
                             onEdit?.call();
                             break;
                           case 'delete':
-                            _showDeleteDialog(context);
+                            onDelete?.call();
                             break;
                         }
                       },
@@ -341,29 +340,5 @@ class EventTile extends StatelessWidget {
     }
 
     return colorScheme.primary;
-  }
-
-  void _showDeleteDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Event'),
-        content: Text('Are you sure you want to delete "${event.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onDelete?.call();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
   }
 }
