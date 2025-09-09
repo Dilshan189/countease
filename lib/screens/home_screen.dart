@@ -478,6 +478,8 @@ class HomeScreen extends StatelessWidget {
                   onTap: () => controller.selectEvent(event),
                   onEdit: () => _navigateToEditEvent(event),
                   onDelete: () => _deleteEvent(event, controller),
+                  compact: true,
+                  showActions: false,
                 );
               },
             ),
@@ -486,7 +488,6 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildAllEventsCard(
     List<Event> events,
