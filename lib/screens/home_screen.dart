@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../controllers/event_controller.dart';
 import '../widgets/countdown_card.dart';
 import '../widgets/event_tile.dart';
+import '../controllers/navigation_controller.dart';
 import '../models/event_model.dart';
 import 'add_event_screen.dart';
 import 'event_detail_screen.dart';
@@ -128,101 +129,24 @@ class HomeScreen extends StatelessWidget {
                 }),
               ),
 
-              // Today's events section
+              // Today's events vertical card
               if (eventController.todayEvents.isNotEmpty)
                 SliverToBoxAdapter(
-                  child: _buildTodayEventsSection(
+                  child: _buildTodayEventsCard(
                     eventController.todayEvents,
                     theme,
+                    eventController,
                   ),
                 ),
 
-              // Events list header
+              // All events card with internal scroll
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'All Events',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      Obx(
-                        () => Container(
-                          decoration: BoxDecoration(
-                            color: eventController.showPastEvents
-                                ? theme.colorScheme.primaryContainer
-                                : theme.colorScheme.surfaceVariant,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: eventController.showPastEvents
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.outline,
-                              width: 1,
-                            ),
-                          ),
-                          child: TextButton.icon(
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            icon: Icon(
-                              eventController.showPastEvents
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              size: 18,
-                              color: eventController.showPastEvents
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.onSurfaceVariant,
-                            ),
-                            label: Text(
-                              eventController.showPastEvents
-                                  ? 'Hide Past'
-                                  : 'Show Past',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: eventController.showPastEvents
-                                    ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            onPressed: () {
-                              eventController.toggleShowPastEvents();
-                              if (kDebugMode) {
-                                print('Toggle button pressed. New state: ${eventController.showPastEvents}');
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                child: _buildAllEventsCard(
+                  events,
+                  theme,
+                  context,
+                  eventController,
                 ),
-              ),
-
-              // Events list
-              SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final event = events[index];
-                  return EventTile(
-                    event: event,
-                    onTap: () => eventController.selectEvent(event),
-                    onEdit: () => _navigateToEditEvent(event),
-                    onDelete: () => _deleteEvent(event, eventController),
-                  );
-                }, childCount: events.length),
               ),
 
               // Bottom padding for navigation bar
@@ -346,112 +270,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTodayEventsSection(List<Event> todayEvents, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Icon(Icons.today, color: theme.colorScheme.primary, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Today\'s Events',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(
-          height: 120,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: todayEvents.length,
-            itemBuilder: (context, index) {
-              final event = todayEvents[index];
-              return Container(
-                width: 200,
-                margin: const EdgeInsets.only(right: 12),
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: InkWell(
-                    onTap: () => _navigateToEventDetail(event),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                event.typeEmoji,
-                                style: const TextStyle(fontSize: 20),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  event.title,
-                                  style: theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.celebration,
-                                  size: 16,
-                                  color: Colors.green,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Today!',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
     );
   }
 
@@ -594,10 +412,6 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
-  void _navigateToAddEvent() {
-    Get.to(() => const AddEventScreen());
-  }
-
   void _navigateToEditEvent(Event event) {
     Get.to(() => AddEventScreen(eventToEdit: event));
   }
@@ -608,5 +422,139 @@ class HomeScreen extends StatelessWidget {
 
   void _deleteEvent(Event event, EventController controller) {
     controller.deleteEvent(event.id);
+  }
+
+  Widget _buildTodayEventsCard(
+    List<Event> todayEvents,
+    ThemeData theme,
+    EventController controller,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  "Today's Events",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${todayEvents.length}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: todayEvents.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              itemBuilder: (context, index) {
+                final event = todayEvents[index];
+                return EventTile(
+                  event: event,
+                  onTap: () => controller.selectEvent(event),
+                  onEdit: () => _navigateToEditEvent(event),
+                  onDelete: () => _deleteEvent(event, controller),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildAllEventsCard(
+    List<Event> events,
+    ThemeData theme,
+    BuildContext context,
+    EventController controller,
+  ) {
+    final height = MediaQuery.of(context).size.height;
+    final listHeight = height * 0.42; // fits nicely under other sections
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Text(
+                  'All Events',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () {
+                    final navigationController =
+                        Get.find<NavigationController>();
+                    navigationController.changeIndex(1);
+                  },
+                  icon: Icon(
+                    Icons.list_alt,
+                    size: 18,
+                    color: theme.colorScheme.primary,
+                  ),
+                  label: Text(
+                    'See All',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: listHeight,
+              child: ListView.separated(
+                padding: const EdgeInsets.only(top: 4, bottom: 4),
+                itemCount: events.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 6),
+                itemBuilder: (context, index) {
+                  final event = events[index];
+                  return EventTile(
+                    event: event,
+                    onTap: () => controller.selectEvent(event),
+                    onEdit: () => _navigateToEditEvent(event),
+                    onDelete: () => _deleteEvent(event, controller),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
