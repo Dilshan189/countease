@@ -19,7 +19,6 @@ class CustomBottomNavigationBar extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final mediaQuery = MediaQuery.of(context);
     final screenHeight = mediaQuery.size.height;
-    final bottomPadding = mediaQuery.padding.bottom;
 
     // Calculate responsive height based on screen size
     final isSmallScreen = screenHeight < 700;

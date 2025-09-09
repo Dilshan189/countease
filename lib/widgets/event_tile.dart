@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../models/event_model.dart';
-import '../controllers/event_controller.dart';
 
 class EventTile extends StatelessWidget {
   final Event event;
@@ -9,6 +7,7 @@ class EventTile extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final bool showActions;
+  final bool compact;
 
   const EventTile({
     super.key,
@@ -17,6 +16,7 @@ class EventTile extends StatelessWidget {
     this.onEdit,
     this.onDelete,
     this.showActions = true,
+    this.compact = false,
   });
 
   @override
@@ -26,43 +26,49 @@ class EventTile extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      elevation: 2,
+      elevation: compact ? 1 : 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(compact ? 12 : 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Event title and type emoji
               Row(
                 children: [
-                  Text(event.typeEmoji, style: const TextStyle(fontSize: 24)),
-                  const SizedBox(width: 12),
+                  Text(
+                    event.typeEmoji,
+                    style: TextStyle(fontSize: compact ? 20 : 24),
+                  ),
+                  SizedBox(width: compact ? 10 : 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           event.title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              (compact
+                                      ? theme.textTheme.titleSmall
+                                      : theme.textTheme.titleMedium)
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Text(
-                          event.typeName,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.6),
+                        if (!compact)
+                          Text(
+                            event.typeName,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurface.withOpacity(0.6),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
-                  if (showActions)
+                  if (showActions && !compact)
                     PopupMenuButton<String>(
                       icon: Icon(
                         Icons.more_vert,
@@ -74,7 +80,7 @@ class EventTile extends StatelessWidget {
                             onEdit?.call();
                             break;
                           case 'delete':
-                            _showDeleteDialog(context);
+                            onDelete?.call();
                             break;
                         }
                       },
@@ -107,28 +113,32 @@ class EventTile extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: compact ? 8 : 12),
 
               // Event date and countdown
               Row(
                 children: [
                   Icon(
                     Icons.calendar_today,
-                    size: 16,
+                    size: compact ? 14 : 16,
                     color: colorScheme.onSurface.withOpacity(0.6),
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: compact ? 3 : 4),
                   Text(
                     _formatEventDate(),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
+                    style:
+                        (compact
+                                ? theme.textTheme.bodySmall
+                                : theme.textTheme.bodySmall)
+                            ?.copyWith(
+                              color: colorScheme.onSurface.withOpacity(0.6),
+                            ),
                   ),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
-                      vertical: 4,
+                      vertical: 3,
                     ),
                     decoration: BoxDecoration(
                       color: _getCountdownColor(colorScheme),
@@ -136,17 +146,22 @@ class EventTile extends StatelessWidget {
                     ),
                     child: Text(
                       _getCountdownText(),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: _getCountdownTextColor(colorScheme),
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style:
+                          (compact
+                                  ? theme.textTheme.labelSmall
+                                  : theme.textTheme.bodySmall)
+                              ?.copyWith(
+                                color: _getCountdownTextColor(colorScheme),
+                                fontWeight: FontWeight.w600,
+                              ),
                     ),
                   ),
                 ],
               ),
 
               // Description if available
-              if (event.description != null &&
+              if (!compact &&
+                  event.description != null &&
                   event.description!.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -160,87 +175,89 @@ class EventTile extends StatelessWidget {
               ],
 
               // Status indicators
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  if (event.repeatYearly)
+              if (!compact) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    if (event.repeatYearly)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: colorScheme.primary.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.repeat,
+                              size: 12,
+                              color: colorScheme.primary,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              'Yearly',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.primary,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    if (event.repeatYearly) const SizedBox(width: 8),
+
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(0.1),
+                        color: event.notificationEnabled
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: colorScheme.primary.withOpacity(0.3),
+                          color: event.notificationEnabled
+                              ? Colors.green.withOpacity(0.3)
+                              : Colors.grey.withOpacity(0.3),
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.repeat,
+                            event.notificationEnabled
+                                ? Icons.notifications_active
+                                : Icons.notifications_off,
                             size: 12,
-                            color: colorScheme.primary,
+                            color: event.notificationEnabled
+                                ? Colors.green
+                                : Colors.grey,
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            'Yearly',
+                            event.notificationEnabled ? 'Notify' : 'Silent',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.primary,
+                              color: event.notificationEnabled
+                                  ? Colors.green
+                                  : Colors.grey,
                               fontSize: 10,
                             ),
                           ),
                         ],
                       ),
                     ),
-
-                  if (event.repeatYearly) const SizedBox(width: 8),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: event.notificationEnabled
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: event.notificationEnabled
-                            ? Colors.green.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          event.notificationEnabled
-                              ? Icons.notifications_active
-                              : Icons.notifications_off,
-                          size: 12,
-                          color: event.notificationEnabled
-                              ? Colors.green
-                              : Colors.grey,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          event.notificationEnabled ? 'Notify' : 'Silent',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: event.notificationEnabled
-                                ? Colors.green
-                                : Colors.grey,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -341,29 +358,5 @@ class EventTile extends StatelessWidget {
     }
 
     return colorScheme.primary;
-  }
-
-  void _showDeleteDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Event'),
-        content: Text('Are you sure you want to delete "${event.title}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onDelete?.call();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
   }
 }

@@ -139,19 +139,24 @@ class EventsListScreen extends StatelessWidget {
               child: RefreshIndicator(
                 onRefresh: eventController.refreshEvents,
                 color: theme.colorScheme.primary,
-                child: ListView.builder(
+                child: ListView.separated(
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 100),
                   itemCount: events.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 4),
                   itemBuilder: (context, index) {
                     final event = events[index];
                     return EventTile(
+                      key: ValueKey(
+                        event.id,
+                      ), // Add key to prevent rebuild issues
                       event: event,
                       onTap: () =>
                           Get.to(() => EventDetailScreen(event: event)),
                       onEdit: () =>
                           Get.to(() => AddEventScreen(eventToEdit: event)),
-                      onDelete: () => eventController.deleteEvent(event.id),
+                      onDelete: () => _confirmDelete(event, eventController),
                     );
                   },
                 ),
@@ -316,5 +321,31 @@ class EventsListScreen extends StatelessWidget {
         controller.setFilterType(EventType.custom);
         break;
     }
+  }
+
+  void _confirmDelete(Event event, EventController controller) {
+    showDialog(
+      context: Get.context!,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Event'),
+        content: Text(
+          'Are you sure you want to delete "${event.title}"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              controller.deleteEvent(event.id);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 }

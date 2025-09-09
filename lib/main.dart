@@ -2,14 +2,11 @@ import 'package:countease/controllers/navigation_controller.dart';
 import 'package:countease/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
-import 'models/event_model.dart';
 import 'services/db_service.dart';
 import 'services/notification_service.dart';
 import 'controllers/event_controller.dart';
-import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/event_model.dart';
 import '../services/db_service.dart';
@@ -10,7 +13,7 @@ class EventController extends GetxController {
   final RxBool _isLoading = false.obs;
   final RxString _searchQuery = ''.obs;
   final Rx<EventType?> _filterType = Rx<EventType?>(null);
-  final RxBool _showPastEvents = false.obs;
+  final RxBool _showPastEvents = true.obs; // Changed to true by default
   final Rx<Event?> _selectedEvent = Rx<Event?>(null);
 
   // Getters
@@ -104,26 +107,71 @@ class EventController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadEvents();
 
-    // Refresh events every minute to update countdowns
-    ever(_events, (_) => update());
+    if (kDebugMode) {
+      print('EventController: Initializing...');
+    }
+
+    // Load events with a small delay to ensure database is fully initialized
+    Future.delayed(const Duration(milliseconds: 100), () {
+      loadEvents();
+    });
   }
 
   // Load all events from database
   Future<void> loadEvents() async {
     try {
       _isLoading.value = true;
+
+      // Debug information
+      if (kDebugMode) {
+        print('EventController: Starting to load events...');
+      }
+
       final events = DatabaseService.getAllEvents();
+
+      if (kDebugMode) {
+        print('EventController: Loaded ${events.length} events from database');
+        for (final event in events) {
+          print('  - ${event.title} (${event.eventDate})');
+        }
+      }
+
       _events.assignAll(events);
-    } catch (e) {
+
+      if (kDebugMode) {
+        print(
+          'EventController: Events assigned to observable list. Total events: ${_events.length}',
+        );
+        print(
+          'EventController: Filtered events count: ${filteredEvents.length}',
+        );
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('EventController: Error loading events: $e');
+        print('Stack trace: $stackTrace');
+      }
+
       Get.snackbar(
         'Error',
         'Failed to load events: $e',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+        duration: const Duration(seconds: 5),
       );
+
+      // Ensure we still have an empty list rather than null
+      _events.clear();
     } finally {
       _isLoading.value = false;
+
+      if (kDebugMode) {
+        print(
+          'EventController: Loading completed. isLoading = ${_isLoading.value}',
+        );
+      }
     }
   }
 
@@ -285,12 +333,38 @@ class EventController extends GetxController {
 
   // Toggle show past events
   void toggleShowPastEvents() {
+    final previousState = _showPastEvents.value;
     _showPastEvents.value = !_showPastEvents.value;
+    
+    if (kDebugMode) {
+      print('EventController: Toggled showPastEvents from $previousState to ${_showPastEvents.value}');
+      print('EventController: Filtered events count after toggle: ${filteredEvents.length}');
+    }
+    
+    // Show feedback to user
+    Get.snackbar(
+      'Filter Updated',
+      _showPastEvents.value 
+          ? 'Now showing past events' 
+          : 'Hiding past events',
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 2),
+    );
+    
+    // Force UI update
+    update();
   }
 
   // Refresh events (pull to refresh)
   Future<void> refreshEvents() async {
+    if (kDebugMode) {
+      print('EventController: Manual refresh triggered');
+    }
+
     await loadEvents();
+
+    // Force UI update
+    update();
   }
 
   // Generate unique ID for new events
@@ -395,5 +469,24 @@ class EventController extends GetxController {
   // Clear selected event
   void clearSelectedEvent() {
     _selectedEvent.value = null;
+  }
+
+  // Debug method to check controller state
+  void debugControllerState() {
+    if (kDebugMode) {
+      print('=== EventController Debug Info ===');
+      print('Total events in controller: ${_events.length}');
+      print('Is loading: ${_isLoading.value}');
+      print('Search query: "${_searchQuery.value}"');
+      print('Filter type: ${_filterType.value}');
+      print('Show past events: ${_showPastEvents.value}');
+      print('Filtered events count: ${filteredEvents.length}');
+      print('Events list:');
+      for (int i = 0; i < _events.length; i++) {
+        final event = _events[i];
+        print('  [$i] ${event.title} - ${event.eventDate} (${event.type})');
+      }
+      print('==================================');
+    }
   }
 }
