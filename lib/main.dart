@@ -23,9 +23,14 @@ void main() async {
   runApp(const CountEaseApp());
 }
 
-class CountEaseApp extends StatelessWidget {
+class CountEaseApp extends StatefulWidget {
   const CountEaseApp({super.key});
 
+  @override
+  State<CountEaseApp> createState() => _CountEaseAppState();
+}
+
+class _CountEaseAppState extends State<CountEaseApp> {
   @override
   Widget build(BuildContext context) {
     // Initialize Controllers
