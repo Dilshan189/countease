@@ -100,7 +100,7 @@ A beautiful and intuitive Flutter countdown app for tracking important events, b
 
 ```
 lib/
-├── controllers/          # GetX controllers
+├── controllers/          # Riverpod statemanagemat controllers
 │   ├── event_controller.dart
 │   └── navigation_controller.dart
 ├── models/              # Data models
