@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -38,7 +37,7 @@ class NotificationService {
         );
 
     await _notifications.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
@@ -113,7 +112,13 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notifications.show(id, title, body, details, payload: payload);
+    await _notifications.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: details,
+      payload: payload,
+    );
   }
 
   // Schedule notification for a specific date and time
@@ -150,11 +155,11 @@ class NotificationService {
       );
 
       await _notifications.zonedSchedule(
-        id,
-        title,
-        body,
-        tz.TZDateTime.from(scheduledDate, tz.local),
-        details,
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+        notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.inexact,
         payload: payload,
       );
@@ -269,9 +274,9 @@ class NotificationService {
   // Cancel notifications for a specific event
   static Future<void> cancelEventNotifications(String eventId) async {
     final id = eventId.hashCode;
-    await _notifications.cancel(id);
-    await _notifications.cancel(id + 1);
-    await _notifications.cancel(id + 2);
+    await _notifications.cancel(id: id);
+    await _notifications.cancel(id: id + 1);
+    await _notifications.cancel(id: id + 2);
   }
 
   // Cancel all notifications
