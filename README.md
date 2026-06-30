@@ -82,7 +82,7 @@ A beautiful and intuitive Flutter countdown app for tracking important events, b
 ## 🏗️ Architecture
 
 ### State Management
-- **GetX**: Reactive state management
+- **Riverpod**: Reactive state management
 - **Controllers**: EventController, NavigationController
 - **Observables**: Reactive lists and variables
 
