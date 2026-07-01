@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/event_controller.dart';
 import '../models/event_model.dart';
 import '../widgets/event_tile.dart';
+import '../theme/app_theme.dart';
 import 'event_detail_screen.dart';
 import 'add_event_screen.dart';
 
@@ -13,12 +14,15 @@ class EventsListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final eventController = Get.find<EventController>();
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'All Events',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          'All Countdown Events',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         elevation: 0,
         actions: [
@@ -46,7 +50,7 @@ class EventsListScreen extends StatelessWidget {
                 value: 'birthday',
                 child: Row(
                   children: [
-                    Text('🎂', style: TextStyle(fontSize: 20)),
+                    Text('🎂', style: TextStyle(fontSize: 18)),
                     SizedBox(width: 12),
                     Text('Birthdays'),
                   ],
@@ -56,7 +60,7 @@ class EventsListScreen extends StatelessWidget {
                 value: 'exam',
                 child: Row(
                   children: [
-                    Text('📚', style: TextStyle(fontSize: 20)),
+                    Text('📚', style: TextStyle(fontSize: 18)),
                     SizedBox(width: 12),
                     Text('Exams'),
                   ],
@@ -66,7 +70,7 @@ class EventsListScreen extends StatelessWidget {
                 value: 'poya',
                 child: Row(
                   children: [
-                    Text('🌕', style: TextStyle(fontSize: 20)),
+                    Text('🌕', style: TextStyle(fontSize: 18)),
                     SizedBox(width: 12),
                     Text('Poya Days'),
                   ],
@@ -76,7 +80,7 @@ class EventsListScreen extends StatelessWidget {
                 value: 'custom',
                 child: Row(
                   children: [
-                    Text('📅', style: TextStyle(fontSize: 20)),
+                    Text('📅', style: TextStyle(fontSize: 18)),
                     SizedBox(width: 12),
                     Text('Custom'),
                   ],
@@ -94,25 +98,25 @@ class EventsListScreen extends StatelessWidget {
         final events = eventController.filteredEvents;
 
         if (events.isEmpty) {
-          return _buildEmptyState(context, theme);
+          return _buildEmptyState(context, theme, isDark);
         }
 
         return Column(
           children: [
-            // Filter and search info
+            // Filter and search info banner
             if (eventController.searchQuery.isNotEmpty ||
                 eventController.filterType != null)
-              _buildFilterInfo(eventController, theme),
+              _buildFilterInfo(eventController, theme, isDark),
 
-            // Toggle show past events
+            // Toggle show past events row
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(
                 children: [
                   Text(
-                    '${events.length} event${events.length != 1 ? 's' : ''}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    '${events.length} countdown${events.length != 1 ? 's' : ''}',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
                     ),
                   ),
                   const Spacer(),
@@ -122,11 +126,14 @@ class EventsListScreen extends StatelessWidget {
                           ? Icons.visibility_off_rounded
                           : Icons.visibility_rounded,
                       size: 16,
+                      color: AppColors.primaryIndigo,
                     ),
                     label: Text(
-                      eventController.showPastEvents
-                          ? 'Hide Past'
-                          : 'Show Past',
+                      eventController.showPastEvents ? 'Hide Past' : 'Show Past',
+                      style: const TextStyle(
+                        color: AppColors.primaryIndigo,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     onPressed: eventController.toggleShowPastEvents,
                   ),
@@ -138,24 +145,19 @@ class EventsListScreen extends StatelessWidget {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: eventController.refreshEvents,
-                color: theme.colorScheme.primary,
+                color: AppColors.primaryIndigo,
                 child: ListView.separated(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 100),
+                  padding: const EdgeInsets.only(bottom: 120),
                   itemCount: events.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 4),
+                  separatorBuilder: (context, index) => const SizedBox(height: 4),
                   itemBuilder: (context, index) {
                     final event = events[index];
                     return EventTile(
-                      key: ValueKey(
-                        event.id,
-                      ), // Add key to prevent rebuild issues
+                      key: ValueKey(event.id),
                       event: event,
-                      onTap: () =>
-                          Get.to(() => EventDetailScreen(event: event)),
-                      onEdit: () =>
-                          Get.to(() => AddEventScreen(eventToEdit: event)),
+                      onTap: () => Get.to(() => EventDetailScreen(event: event)),
+                      onEdit: () => Get.to(() => AddEventScreen(eventToEdit: event)),
                       onDelete: () => _confirmDelete(event, eventController),
                     );
                   },
@@ -168,7 +170,7 @@ class EventsListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, ThemeData theme) {
+  Widget _buildEmptyState(BuildContext context, ThemeData theme, bool isDark) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -176,35 +178,34 @@ class EventsListScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: AppColors.primaryIndigo.withValues(alpha: 0.1),
                 border: Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.2),
+                  color: AppColors.primaryIndigo.withValues(alpha: 0.15),
                   width: 2,
                 ),
               ),
               child: Icon(
                 Icons.event_note_rounded,
-                size: 80,
-                color: theme.colorScheme.primary.withOpacity(0.7),
+                size: 72,
+                color: AppColors.primaryIndigo.withValues(alpha: 0.8),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             Text(
               'No Events Found',
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
-              'Try adjusting your filters or add some events to get started!',
+              'Try adjusting your search query, changing filters, or adding a new countdown to begin!',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
                 height: 1.5,
               ),
             ),
@@ -214,51 +215,55 @@ class EventsListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterInfo(EventController controller, ThemeData theme) {
+  Widget _buildFilterInfo(EventController controller, ThemeData theme, bool isDark) {
     final parts = <String>[];
-
     if (controller.searchQuery.isNotEmpty) {
       parts.add('Search: "${controller.searchQuery}"');
     }
-
     if (controller.filterType != null) {
       parts.add('Type: ${controller.filterType!.name}');
     }
-
     if (controller.showPastEvents) {
       parts.add('Including past events');
     }
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primaryIndigo.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.primaryIndigo.withValues(alpha: 0.15),
+        ),
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.info_outline_rounded,
-            size: 20,
-            color: theme.colorScheme.onPrimaryContainer,
+            size: 18,
+            color: AppColors.primaryIndigo,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               parts.join(' • '),
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer,
+                color: AppColors.primaryIndigo,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.clear_rounded, size: 20),
-            onPressed: () {
+          GestureDetector(
+            onTap: () {
               controller.clearSearch();
               controller.clearFilter();
             },
-            tooltip: 'Clear filters',
+            child: const Icon(
+              Icons.close_rounded,
+              size: 18,
+              color: AppColors.primaryIndigo,
+            ),
           ),
         ],
       ),
@@ -270,14 +275,15 @@ class EventsListScreen extends StatelessWidget {
       context: context,
       builder: (context) {
         String searchQuery = controller.searchQuery;
-
         return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text('Search Events'),
           content: TextField(
             autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'Enter event name or description...',
-              prefixIcon: Icon(Icons.search_rounded),
+            decoration: InputDecoration(
+              hintText: 'Enter search text...',
+              prefixIcon: const Icon(Icons.search_rounded),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onChanged: (value) => searchQuery = value,
             onSubmitted: (value) {
@@ -290,11 +296,16 @@ class EventsListScreen extends StatelessWidget {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 controller.searchEvents(searchQuery.trim());
                 Navigator.of(context).pop();
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryIndigo,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
               child: const Text('Search'),
             ),
           ],
@@ -327,10 +338,9 @@ class EventsListScreen extends StatelessWidget {
     showDialog(
       context: Get.context!,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Delete Event'),
-        content: Text(
-          'Are you sure you want to delete "${event.title}"? This action cannot be undone.',
-        ),
+        content: Text('Are you sure you want to delete "${event.title}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -341,7 +351,7 @@ class EventsListScreen extends StatelessWidget {
               Navigator.of(context).pop();
               controller.deleteEvent(event.id);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
             child: const Text('Delete'),
           ),
         ],

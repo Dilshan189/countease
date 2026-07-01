@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:confetti/confetti.dart';
 import '../models/event_model.dart';
 import '../controllers/event_controller.dart';
 import '../widgets/custom_button.dart';
+import '../theme/app_theme.dart';
 import 'add_event_screen.dart';
 
 class EventDetailScreen extends StatefulWidget {
@@ -21,22 +23,24 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   final _eventController = Get.find<EventController>();
   Timer? _timer;
   Map<String, int> _timeRemaining = {};
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
     _updateCountdown();
-
-    // Update every second for real-time countdown
-    _timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) => _updateCountdown(),
-    );
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateCountdown());
+    
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    if (widget.event.isToday) {
+      _confettiController.play();
+    }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -51,124 +55,178 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Get.back(),
+        leading: Container(
+          margin: const EdgeInsets.only(left: 12),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.black.withValues(alpha: 0.3),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+            onPressed: () => Get.back(),
+          ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.white),
-            onPressed: () => _editEvent(),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black.withValues(alpha: 0.3),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.edit_rounded, color: Colors.white),
+              onPressed: () => _editEvent(),
+            ),
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: _handleMenuAction,
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'share',
-                child: Row(
-                  children: [
-                    Icon(Icons.share, size: 20),
-                    SizedBox(width: 8),
-                    Text('Share'),
-                  ],
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.black.withValues(alpha: 0.3),
+            ),
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+              onSelected: _handleMenuAction,
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'share',
+                  child: Row(
+                    children: [
+                      Icon(Icons.share_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text('Share'),
+                    ],
+                  ),
                 ),
-              ),
-              const PopupMenuItem(
-                value: 'duplicate',
-                child: Row(
-                  children: [
-                    Icon(Icons.copy, size: 20),
-                    SizedBox(width: 8),
-                    Text('Duplicate'),
-                  ],
+                const PopupMenuItem(
+                  value: 'duplicate',
+                  child: Row(
+                    children: [
+                      Icon(Icons.copy_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text('Duplicate'),
+                    ],
+                  ),
                 ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, size: 20, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Delete', style: TextStyle(color: Colors.red)),
-                  ],
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_rounded, size: 20, color: AppColors.danger),
+                      const SizedBox(width: 8),
+                      Text('Delete', style: TextStyle(color: AppColors.danger)),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hero Section with Countdown
-            _buildHeroSection(theme),
-
-            // Event Details Section
-            _buildDetailsSection(theme),
-
-            // Action Buttons
-            _buildActionButtons(theme),
-          ],
-        ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // Immersive Hero Section
+                _buildHeroSection(theme, isDark),
+                // Details Section
+                _buildDetailsSection(theme, isDark),
+                // Actions
+                _buildActionButtons(theme),
+              ],
+            ),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple,
+                Colors.amber,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildHeroSection(ThemeData theme) {
+  Widget _buildHeroSection(ThemeData theme, bool isDark) {
     return Container(
-      height: 480,
-      decoration: BoxDecoration(gradient: _getEventGradient()),
+      height: 420,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: _getEventGradient(),
+      ),
       child: SafeArea(
+        bottom: false,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Center(
-                child: Text(
-                  widget.event.typeEmoji,
-                  style: const TextStyle(fontSize: 64),
+              // Event Emoji
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.2),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    widget.event.typeEmoji,
+                    style: const TextStyle(fontSize: 40),
+                  ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // Event Title
-              Center(
+              // Title
+              Text(
+                widget.event.title,
+                style: theme.textTheme.displaySmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              // Type name badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Text(
-                  widget.event.title,
-                  style: theme.textTheme.headlineMedium?.copyWith(
+                  widget.event.typeName.toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Event Type
-              Center(
-                child: Text(
-                  widget.event.typeName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                    letterSpacing: 1.2,
                   ),
                 ),
               ),
-
-              const SizedBox(height: 24),
-
-              // Countdown or Status
-              Expanded(child: Center(child: _buildCountdownDisplay(theme))),
+              const Spacer(),
+              // Countdown timer display
+              _buildCountdownDisplay(theme),
             ],
           ),
         ),
@@ -178,157 +236,137 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   Widget _buildCountdownDisplay(ThemeData theme) {
     if (widget.event.isToday) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.celebration, color: Colors.white, size: 48),
-          const SizedBox(height: 12),
-          Text(
-            'Today is the day!',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+      return GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          _confettiController.play();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: AppDecorations.innerGlass(borderRadius: 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.celebration_rounded, color: Colors.white, size: 28),
+              const SizedBox(width: 10),
+              Text(
+                'TODAY IS THE DAY! 🎉',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       );
     }
 
     if (widget.event.hasPassed && !widget.event.repeatYearly) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.history, color: Colors.white, size: 48),
-          const SizedBox(height: 12),
-          Text(
-            'Event has passed',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: AppDecorations.innerGlass(borderRadius: 16),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.history_rounded, color: Colors.white, size: 28),
+            const SizedBox(width: 10),
+            Text(
+              'Event Has Passed',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
-    // Countdown display
     final days = _timeRemaining['days'] ?? 0;
     final hours = _timeRemaining['hours'] ?? 0;
     final minutes = _timeRemaining['minutes'] ?? 0;
     final seconds = _timeRemaining['seconds'] ?? 0;
 
-    return Column(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Large countdown numbers
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            if (days > 0) _buildTimeUnit(days.toString(), 'Days', theme),
-            if (days > 0 || hours > 0)
-              _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Hours', theme),
-            _buildTimeUnit(
-              minutes.toString().padLeft(2, '0'),
-              'Minutes',
-              theme,
-            ),
-            _buildTimeUnit(
-              seconds.toString().padLeft(2, '0'),
-              'Seconds',
-              theme,
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Simplified text
-        Text(
-          _getSimplifiedCountdown(),
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: Colors.white.withOpacity(0.9),
-          ),
-          textAlign: TextAlign.center,
-        ),
+        if (days > 0) _buildTimeUnit(days.toString(), 'Days', theme),
+        if (days > 0 || hours > 0) _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Hours', theme),
+        _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Min', theme),
+        _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Sec', theme),
       ],
     );
   }
 
   Widget _buildTimeUnit(String value, String label, ThemeData theme) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: theme.textTheme.headlineLarge?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 36,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: AppDecorations.innerGlass(borderRadius: 14),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: theme.textTheme.displayMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 26,
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 12,
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildDetailsSection(ThemeData theme) {
+  Widget _buildDetailsSection(ThemeData theme, bool isDark) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Section Title
           Text(
             'Event Details',
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 16),
 
-          // Event Date
-          _buildDetailItem(
-            icon: Icons.calendar_today,
-            title: 'Event Date',
-            subtitle: DateFormat(
-              'EEEE, MMMM d, y',
-            ).format(widget.event.eventDate),
-            theme: theme,
+          // Detail list cards
+          _buildDetailCard(
+            Icons.calendar_today_rounded,
+            'Date & Time',
+            _formatFullDate(),
+            theme,
+            isDark,
+          ),
+          _buildDetailCard(
+            Icons.hourglass_bottom_rounded,
+            'Time Remaining Info',
+            _getDetailedTimeRemaining(),
+            theme,
+            isDark,
+          ),
+          _buildDetailCard(
+            Icons.add_circle_outline_rounded,
+            'Created On',
+            DateFormat('EEEE, MMMM d, y').format(widget.event.createdAt),
+            theme,
+            isDark,
           ),
 
-          // Time until event
-          _buildDetailItem(
-            icon: Icons.access_time,
-            title: 'Time Remaining',
-            subtitle: _getDetailedTimeRemaining(),
-            theme: theme,
-          ),
-
-          // Created date
-          _buildDetailItem(
-            icon: Icons.add_circle_outline,
-            title: 'Created',
-            subtitle: DateFormat('MMM d, y').format(widget.event.createdAt),
-            theme: theme,
-          ),
-
-          // Last updated
-          if (widget.event.updatedAt != widget.event.createdAt)
-            _buildDetailItem(
-              icon: Icons.update,
-              title: 'Last Updated',
-              subtitle: DateFormat('MMM d, y').format(widget.event.updatedAt),
-              theme: theme,
-            ),
-
-          // Description
-          if (widget.event.description != null &&
-              widget.event.description!.isNotEmpty) ...[
+          // Description Card
+          if (widget.event.description != null && widget.event.description!.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
               'Description',
@@ -336,22 +374,26 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+                color: isDark ? AppColors.surfaceDarkElevated : AppColors.surfaceLightElevated,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
               ),
               child: Text(
                 widget.event.description!,
-                style: theme.textTheme.bodyMedium,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  height: 1.5,
+                  color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                ),
               ),
             ),
           ],
 
-          // Settings
+          // Notification settings
           const SizedBox(height: 24),
           Text(
             'Settings',
@@ -359,39 +401,55 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          _buildSettingItem(
-            icon: Icons.repeat,
-            title: 'Repeat Yearly',
-            isEnabled: widget.event.repeatYearly,
-            theme: theme,
+          const SizedBox(height: 12),
+          _buildSettingsSwitch(
+            Icons.repeat_rounded,
+            'Repeat Yearly',
+            widget.event.repeatYearly,
+            theme,
+            isDark,
           ),
-
-          _buildSettingItem(
-            icon: Icons.notifications,
-            title: 'Notifications',
-            isEnabled: widget.event.notificationEnabled,
-            theme: theme,
+          const SizedBox(height: 8),
+          _buildSettingsSwitch(
+            Icons.notifications_active_rounded,
+            'Notifications Status',
+            widget.event.notificationEnabled,
+            theme,
+            isDark,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required ThemeData theme,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+  Widget _buildDetailCard(
+    IconData icon,
+    String title,
+    String value,
+    ThemeData theme,
+    bool isDark,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDarkCard : AppColors.surfaceLightCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+        ),
+      ),
       child: Row(
         children: [
-          Icon(icon, color: theme.colorScheme.primary, size: 20),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primaryIndigo.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: AppColors.primaryIndigo, size: 20),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,13 +457,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 Text(
                   title,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  subtitle,
+                  value,
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -416,39 +475,34 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  Widget _buildSettingItem({
-    required IconData icon,
-    required String title,
-    required bool isEnabled,
-    required ThemeData theme,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+  Widget _buildSettingsSwitch(
+    IconData icon,
+    String title,
+    bool value,
+    ThemeData theme,
+    bool isDark,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDarkCard : AppColors.surfaceLightCard,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: isEnabled
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onSurface.withOpacity(0.4),
-            size: 20,
-          ),
+          Icon(icon, color: value ? AppColors.primaryIndigo : Colors.grey, size: 20),
           const SizedBox(width: 12),
           Text(
             title,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: isEnabled
-                  ? theme.colorScheme.onSurface
-                  : theme.colorScheme.onSurface.withOpacity(0.6),
+              fontWeight: FontWeight.w600,
             ),
           ),
           const Spacer(),
           Icon(
-            isEnabled ? Icons.check_circle : Icons.cancel,
-            color: isEnabled
-                ? Colors.green
-                : theme.colorScheme.onSurface.withOpacity(0.4),
-            size: 20,
+            value ? Icons.check_circle_rounded : Icons.cancel_rounded,
+            color: value ? AppColors.success : Colors.grey,
+            size: 22,
           ),
         ],
       ),
@@ -457,27 +511,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   Widget _buildActionButtons(ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
+      padding: const EdgeInsets.only(left: 24, right: 24, bottom: 40),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: CustomButton(
-                  text: 'Share Event',
-                  onPressed: _shareEvent,
-                  icon: const Icon(Icons.share, color: Colors.white),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: OutlinedCustomButton(
-                  text: 'Edit Event',
-                  onPressed: _editEvent,
-                  icon: const Icon(Icons.edit),
-                ),
-              ),
-            ],
+          Expanded(
+            child: CustomButton(
+              text: 'Share Countdown',
+              onPressed: _shareEvent,
+              icon: const Icon(Icons.share_rounded, size: 18),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: OutlinedCustomButton(
+              text: 'Edit Details',
+              onPressed: _editEvent,
+              icon: const Icon(Icons.edit_rounded, size: 18),
+            ),
           ),
         ],
       ),
@@ -487,59 +537,26 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   LinearGradient _getEventGradient() {
     switch (widget.event.type) {
       case EventType.birthday:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
-        );
+        return AppGradients.birthdayGradient;
       case EventType.exam:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4ECDC4), Color(0xFF44A08D)],
-        );
+        return AppGradients.examGradient;
       case EventType.poya:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-        );
+        return AppGradients.poyaGradient;
       case EventType.custom:
-        return const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF43A047), Color(0xFF66BB6A)],
-        );
+        return AppGradients.customGradient;
     }
   }
 
-  String _getSimplifiedCountdown() {
-    final days = _timeRemaining['days'] ?? 0;
-
-    if (days > 365) {
-      final years = (days / 365).floor();
-      return 'About $years year${years > 1 ? 's' : ''} to go';
+  String _formatFullDate() {
+    final eventDate = widget.event.eventDate;
+    final eventTime = widget.event.eventTime;
+    final dateStr = DateFormat('EEEE, MMMM d, y').format(eventDate);
+    if (eventTime != null) {
+      final hour = eventTime.hour.toString().padLeft(2, '0');
+      final min = eventTime.minute.toString().padLeft(2, '0');
+      return '$dateStr at $hour:$min';
     }
-
-    if (days > 30) {
-      final months = (days / 30).floor();
-      return 'About $months month${months > 1 ? 's' : ''} to go';
-    }
-
-    if (days > 7) {
-      final weeks = (days / 7).floor();
-      return 'About $weeks week${weeks > 1 ? 's' : ''} to go';
-    }
-
-    if (days == 1) {
-      return 'Tomorrow!';
-    }
-
-    if (days > 0) {
-      return '$days day${days > 1 ? 's' : ''} to go';
-    }
-
-    return 'Less than a day to go!';
+    return dateStr;
   }
 
   String _getDetailedTimeRemaining() {
@@ -547,33 +564,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     final hours = _timeRemaining['hours'] ?? 0;
     final minutes = _timeRemaining['minutes'] ?? 0;
 
-    if (widget.event.isToday) {
-      return 'Today!';
-    }
-
-    if (widget.event.hasPassed && !widget.event.repeatYearly) {
-      return 'Event has passed';
-    }
+    if (widget.event.isToday) return 'Today!';
+    if (widget.event.hasPassed && !widget.event.repeatYearly) return 'Passed';
 
     final parts = <String>[];
+    if (days > 0) parts.add('$days day${days > 1 ? 's' : ''}');
+    if (hours > 0) parts.add('$hours hour${hours > 1 ? 's' : ''}');
+    if (minutes > 0 && days == 0) parts.add('$minutes minute${minutes > 1 ? 's' : ''}');
 
-    if (days > 0) {
-      parts.add('$days day${days > 1 ? 's' : ''}');
-    }
-
-    if (hours > 0) {
-      parts.add('$hours hour${hours > 1 ? 's' : ''}');
-    }
-
-    if (minutes > 0 && days == 0) {
-      parts.add('$minutes minute${minutes > 1 ? 's' : ''}');
-    }
-
-    if (parts.isEmpty) {
-      return 'Less than a minute';
-    }
-
-    return parts.join(', ');
+    return parts.isEmpty ? 'Less than a minute' : parts.join(', ');
   }
 
   void _editEvent() {
@@ -595,59 +594,47 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   void _shareEvent() {
-    final text = _generateShareText();
-    Clipboard.setData(ClipboardData(text: text));
+    final eventDateStr = DateFormat('MMMM d, y').format(widget.event.eventDate);
+    final text = '''
+⏰ CountEase - Countdown Active!
+🎯 ${widget.event.typeEmoji} ${widget.event.title}
+📅 Target: $eventDateStr
+⏳ Time Left: ${_getDetailedTimeRemaining()}
 
+Shared via CountEase App
+'''.trim();
+    Clipboard.setData(ClipboardData(text: text));
     Get.snackbar(
       'Copied!',
-      'Event details copied to clipboard',
+      'Countdown details copied to clipboard.',
       snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
+      backgroundColor: AppColors.primaryIndigo,
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
     );
   }
 
-  String _generateShareText() {
-    final eventDate = DateFormat('MMMM d, y').format(widget.event.eventDate);
-    final timeRemaining = _getDetailedTimeRemaining();
-
-    return '''
-🎯 ${widget.event.typeEmoji} ${widget.event.title}
-
-📅 Date: $eventDate
-⏰ Time Remaining: $timeRemaining
-${widget.event.repeatYearly ? '🔄 Repeats yearly' : ''}
-
-${widget.event.description ?? ''}
-
-Shared from CountEase app
-'''
-        .trim();
-  }
-
   void _duplicateEvent() {
-    final duplicatedEvent = Event(
+    final duplicated = Event(
       id: _eventController.generateEventId(),
       title: '${widget.event.title} (Copy)',
-      eventDate: widget.event.eventDate.add(
-        const Duration(days: 365),
-      ), // Next year
+      eventDate: widget.event.eventDate.add(const Duration(days: 365)),
       type: widget.event.type,
       repeatYearly: widget.event.repeatYearly,
       notificationEnabled: widget.event.notificationEnabled,
       description: widget.event.description,
     );
-
-    Get.to(() => AddEventScreen(eventToEdit: duplicatedEvent));
+    Get.to(() => AddEventScreen(eventToEdit: duplicated));
   }
 
   void _deleteEvent() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Delete Event'),
-        content: Text(
-          'Are you sure you want to delete "${widget.event.title}"? This action cannot be undone.',
-        ),
+        content: Text('Are you sure you want to delete "${widget.event.title}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -655,7 +642,7 @@ Shared from CountEase app
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
             child: const Text('Delete'),
           ),
         ],
@@ -665,7 +652,7 @@ Shared from CountEase app
     if (confirmed == true) {
       final success = await _eventController.deleteEvent(widget.event.id);
       if (success) {
-        Get.back(); // Go back to previous screen
+        Get.back();
       }
     }
   }
