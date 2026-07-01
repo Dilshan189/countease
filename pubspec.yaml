@@ -49,6 +49,9 @@ dependencies:
   # UI Components
   intl: ^0.20.3
   
+  # Typography
+  google_fonts: ^6.2.1
+  
   # Home Widget
   home_widget: ^0.9.3
   

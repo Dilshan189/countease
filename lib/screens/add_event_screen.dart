@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/event_model.dart';
 import '../controllers/event_controller.dart';
 import '../widgets/custom_button.dart';
+import '../theme/app_theme.dart';
 
 class AddEventScreen extends StatefulWidget {
   final Event? eventToEdit;
@@ -58,29 +59,38 @@ class _AddEventScreenState extends State<AddEventScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Event' : 'Add New Event'),
+        title: Text(
+          _isEditing ? 'Edit Event' : 'Add New Event',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         elevation: 0,
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Event Title
+              // Event Details Title
               _buildSectionTitle('Event Details', theme),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              // Title input
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
+                style: theme.textTheme.bodyLarge,
+                decoration: InputDecoration(
                   labelText: 'Event Name',
-                  hintText: 'Enter event name',
-                  prefixIcon: Icon(Icons.event),
-                  border: OutlineInputBorder(),
+                  hintText: 'Enter event name...',
+                  prefixIcon: const Icon(Icons.event_rounded),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -90,49 +100,44 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 },
                 textCapitalization: TextCapitalization.words,
               ),
-
               const SizedBox(height: 16),
 
-              // Description
+              // Description input
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
+                style: theme.textTheme.bodyLarge,
+                decoration: InputDecoration(
                   labelText: 'Description (Optional)',
-                  hintText: 'Add a description for your event',
-                  prefixIcon: Icon(Icons.description),
-                  border: OutlineInputBorder(),
+                  hintText: 'Add a description...',
+                  prefixIcon: const Icon(Icons.description_rounded),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
               ),
-
               const SizedBox(height: 24),
 
-              // Event Type
-              _buildSectionTitle('Event Type', theme),
-              const SizedBox(height: 16),
-              _buildEventTypeSelector(theme),
-
+              // Event Type Title
+              _buildSectionTitle('Event Category', theme),
+              const SizedBox(height: 12),
+              _buildEventTypeCards(theme, isDark),
               const SizedBox(height: 24),
 
-              // Date Selection
-              _buildSectionTitle('Event Date', theme),
-              const SizedBox(height: 16),
-              _buildDateSelector(theme),
-
-              const SizedBox(height: 16),
-              _buildTimeSelector(theme),
-
+              // Event Date & Time
+              _buildSectionTitle('Date & Time', theme),
+              const SizedBox(height: 12),
+              _buildDateTile(theme, isDark),
+              const SizedBox(height: 10),
+              _buildTimeTile(theme, isDark),
               const SizedBox(height: 24),
 
               // Options
-              _buildSectionTitle('Options', theme),
-              const SizedBox(height: 16),
-              _buildOptionsSection(theme),
+              _buildSectionTitle('Preferences', theme),
+              const SizedBox(height: 12),
+              _buildOptionsBox(theme, isDark),
+              const SizedBox(height: 36),
 
-              const SizedBox(height: 32),
-
-              // Action Buttons
+              // Actions
               Row(
                 children: [
                   Expanded(
@@ -144,26 +149,14 @@ class _AddEventScreenState extends State<AddEventScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: CustomButton(
-                      text: _isEditing ? 'Update Event' : 'Create Event',
+                      text: _isEditing ? 'Save Changes' : 'Create Event',
                       onPressed: _saveEvent,
                       isLoading: _isLoading,
                     ),
                   ),
                 ],
               ),
-
-              // Delete button for editing
-              if (_isEditing) ...[
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: DangerButton(
-                    text: 'Delete Event',
-                    onPressed: _deleteEvent,
-                    icon: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                ),
-              ],
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -176,136 +169,197 @@ class _AddEventScreenState extends State<AddEventScreen> {
       title,
       style: theme.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.bold,
-        color: theme.colorScheme.primary,
+        color: AppColors.primaryIndigo,
+        letterSpacing: 0.5,
       ),
     );
   }
 
-  Widget _buildEventTypeSelector(ThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outline),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: EventType.values.map((type) {
-          return RadioListTile<EventType>(
-            title: Row(
+  Widget _buildEventTypeCards(ThemeData theme, bool isDark) {
+    return Column(
+      children: EventType.values.map((type) {
+        final isSelected = _selectedType == type;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedType = type;
+              if (type == EventType.birthday || type == EventType.poya) {
+                _repeatYearly = true;
+              } else {
+                _repeatYearly = false;
+              }
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: isSelected ? _getGradient(type) : null,
+              color: isSelected
+                  ? null
+                  : (isDark ? AppColors.surfaceDarkCard : AppColors.surfaceLightCard),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected
+                    ? Colors.transparent
+                    : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: _getGradient(type).colors.first.withValues(alpha: 0.25),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
               children: [
-                Text(_getTypeEmoji(type), style: const TextStyle(fontSize: 20)),
-                const SizedBox(width: 12),
-                Text(_getTypeName(type)),
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : AppColors.primaryIndigo.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _getTypeEmoji(type),
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getTypeName(type),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: isSelected ? Colors.white : (isDark ? Colors.white : Colors.black),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _getTypeDescription(type),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: isSelected
+                              ? Colors.white.withValues(alpha: 0.8)
+                              : (isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isSelected)
+                  const Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
               ],
             ),
-            subtitle: Text(_getTypeDescription(type)),
-            value: type,
-            groupValue: _selectedType,
-            onChanged: (EventType? value) {
-              setState(() {
-                _selectedType = value!;
-                // Auto-enable yearly repeat for birthdays and poya events
-                if (type == EventType.birthday || type == EventType.poya) {
-                  _repeatYearly = true;
-                }
-              });
-            },
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildTimeSelector(ThemeData theme) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outline),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: const Icon(Icons.access_time),
-        title: const Text('Event Time (Optional)'),
-        subtitle: Text(
-          _selectedTime != null
-              ? _selectedTime!.format(context)
-              : 'No specific time set',
-          style: TextStyle(
-            color: _selectedTime != null
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onSurface.withOpacity(0.6),
-            fontWeight: _selectedTime != null
-                ? FontWeight.w600
-                : FontWeight.normal,
           ),
-        ),
-        trailing: _selectedTime != null
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.clear, size: 16),
-                    onPressed: () => setState(() => _selectedTime = null),
-                  ),
-                  const Icon(Icons.arrow_forward_ios, size: 16),
-                ],
-              )
-            : const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: _selectTime,
-      ),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildDateSelector(ThemeData theme) {
+  Widget _buildDateTile(ThemeData theme, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outline),
-        borderRadius: BorderRadius.circular(8),
+        color: isDark ? AppColors.surfaceDarkCard : AppColors.surfaceLightCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
       ),
       child: ListTile(
-        leading: const Icon(Icons.calendar_today),
-        title: const Text('Event Date'),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primaryIndigo.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.calendar_today_rounded, color: AppColors.primaryIndigo, size: 20),
+        ),
+        title: Text(
+          'Select Date',
+          style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
         subtitle: Text(
           DateFormat('EEEE, MMMM d, y').format(_selectedDate),
-          style: TextStyle(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w600,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.primaryIndigo,
           ),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        trailing: const Icon(Icons.chevron_right_rounded),
         onTap: _selectDate,
       ),
     );
   }
 
-  Widget _buildOptionsSection(ThemeData theme) {
+  Widget _buildTimeTile(ThemeData theme, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: theme.colorScheme.outline),
-        borderRadius: BorderRadius.circular(8),
+        color: isDark ? AppColors.surfaceDarkCard : AppColors.surfaceLightCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.accent.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.access_time_rounded, color: AppColors.accent, size: 20),
+        ),
+        title: Text(
+          'Select Time (Optional)',
+          style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          _selectedTime != null ? _selectedTime!.format(context) : 'No time set (All day)',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: _selectedTime != null ? AppColors.accent : Colors.grey,
+          ),
+        ),
+        trailing: _selectedTime != null
+            ? IconButton(
+                icon: const Icon(Icons.clear_rounded, size: 20),
+                onPressed: () => setState(() => _selectedTime = null),
+              )
+            : const Icon(Icons.chevron_right_rounded),
+        onTap: _selectTime,
+      ),
+    );
+  }
+
+  Widget _buildOptionsBox(ThemeData theme, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDarkCard : AppColors.surfaceLightCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
       ),
       child: Column(
         children: [
           SwitchListTile(
             title: const Text('Repeat Yearly'),
-            subtitle: const Text('Event will repeat every year'),
+            subtitle: const Text('Resets target date automatically every year'),
             value: _repeatYearly,
-            onChanged: (bool value) {
-              setState(() {
-                _repeatYearly = value;
-              });
-            },
-            secondary: const Icon(Icons.repeat),
+            onChanged: (bool value) => setState(() => _repeatYearly = value),
+            secondary: const Icon(Icons.repeat_rounded),
           ),
           const Divider(height: 1),
           SwitchListTile(
-            title: const Text('Enable Notifications'),
-            subtitle: const Text('Get reminded about this event'),
+            title: const Text('Enable Alerts'),
+            subtitle: const Text('Get push notifications before target time'),
             value: _notificationEnabled,
-            onChanged: (bool value) {
-              setState(() {
-                _notificationEnabled = value;
-              });
-            },
-            secondary: const Icon(Icons.notifications),
+            onChanged: (bool value) => setState(() => _notificationEnabled = value),
+            secondary: const Icon(Icons.notifications_active_rounded),
           ),
         ],
       ),
@@ -334,80 +388,73 @@ class _AddEventScreenState extends State<AddEventScreen> {
       case EventType.poya:
         return 'Poya';
       case EventType.custom:
-        return 'Custom';
+        return 'Custom Event';
     }
   }
 
   String _getTypeDescription(EventType type) {
     switch (type) {
       case EventType.birthday:
-        return 'Celebrate special birthdays';
+        return 'Yearly celebrative milestone';
       case EventType.exam:
-        return 'Important exams and tests';
+        return 'Tests, reviews, and academic tasks';
       case EventType.poya:
-        return 'Poya day observances';
+        return 'Buddhist Poya holiday schedule';
       case EventType.custom:
-        return 'Any other special occasion';
+        return 'Any other countdown track';
+    }
+  }
+
+  LinearGradient _getGradient(EventType type) {
+    switch (type) {
+      case EventType.birthday:
+        return AppGradients.birthdayGradient;
+      case EventType.exam:
+        return AppGradients.examGradient;
+      case EventType.poya:
+        return AppGradients.poyaGradient;
+      case EventType.custom:
+        return AppGradients.customGradient;
     }
   }
 
   Future<void> _selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(
+    final picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime ?? TimeOfDay.now(),
-      helpText: 'Select Event Time',
-      cancelText: 'Cancel',
-      confirmText: 'Select',
     );
-
     if (picked != null) {
-      setState(() {
-        _selectedTime = picked;
-      });
+      setState(() => _selectedTime = picked);
     }
   }
 
   Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      helpText: 'Select Event Date',
-      cancelText: 'Cancel',
-      confirmText: 'Select',
     );
-
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
     }
   }
 
   Future<void> _saveEvent() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final event = Event(
-        id: _isEditing
-            ? widget.eventToEdit!.id
-            : _eventController.generateEventId(),
+        id: _isEditing ? widget.eventToEdit!.id : _eventController.generateEventId(),
         title: _titleController.text.trim(),
         eventDate: _selectedDate,
         eventTime: _selectedTime,
         type: _selectedType,
         repeatYearly: _repeatYearly,
         notificationEnabled: _notificationEnabled,
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
         createdAt: _isEditing ? widget.eventToEdit!.createdAt : DateTime.now(),
       );
 
@@ -422,166 +469,24 @@ class _AddEventScreenState extends State<AddEventScreen> {
         Get.back();
         Get.snackbar(
           'Success',
-          _isEditing
-              ? 'Event updated successfully!'
-              : 'Event created successfully!',
+          _isEditing ? 'Countdown saved' : 'Countdown active!',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           colorText: Colors.white,
-        );
-      } else {
-        // If event creation failed, show option to create without notifications
-        _showCreateWithoutNotificationsDialog();
-      }
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to save event: $e',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _deleteEvent() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Event'),
-        content: Text(
-          'Are you sure you want to delete "${widget.eventToEdit!.title}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      try {
-        final success = await _eventController.deleteEvent(
-          widget.eventToEdit!.id,
-        );
-        if (success) {
-          Get.back(); // Go back to previous screen
-          Get.snackbar(
-            'Success',
-            'Event deleted successfully!',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.green,
-            colorText: Colors.white,
-          );
-        }
-      } catch (e) {
-        Get.snackbar(
-          'Error',
-          'Failed to delete event: $e',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  void _showCreateWithoutNotificationsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Notification Issue'),
-        content: const Text(
-          'There was an issue setting up notifications for this event. '
-          'Would you like to create the event without notifications?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _createEventWithoutNotifications();
-            },
-            child: const Text('Create Without Notifications'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _createEventWithoutNotifications() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final event = Event(
-        id: _isEditing
-            ? widget.eventToEdit!.id
-            : _eventController.generateEventId(),
-        title: _titleController.text.trim(),
-        eventDate: _selectedDate,
-        eventTime: _selectedTime,
-        type: _selectedType,
-        repeatYearly: _repeatYearly,
-        notificationEnabled: false, // Disable notifications
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-        createdAt: _isEditing ? widget.eventToEdit!.createdAt : DateTime.now(),
-      );
-
-      bool success;
-      if (_isEditing) {
-        success = await _eventController.updateEvent(event);
-      } else {
-        success = await _eventController.addEvent(event);
-      }
-
-      if (success) {
-        Get.back();
-        Get.snackbar(
-          'Success',
-          '${_isEditing ? "Event updated" : "Event created"} successfully! (Notifications disabled)',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12,
         );
       }
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to save event: $e',
+        'Could not save countdown: $e',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.danger,
         colorText: Colors.white,
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 }

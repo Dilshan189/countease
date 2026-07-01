@@ -1,5 +1,7 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../theme/app_theme.dart';
 import 'main_navigation_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -13,224 +15,293 @@ class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _logoController;
   late AnimationController _textController;
-  late Animation<double> _logoAnimation;
-  late Animation<double> _textAnimation;
-  late Animation<Offset> _slideAnimation;
+  late AnimationController _pulseController;
+  late AnimationController _gradientController;
+  late Animation<double> _logoScale;
+  late Animation<double> _logoOpacity;
+  late Animation<double> _textOpacity;
+  late Animation<Offset> _textSlide;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _gradientAnimation;
 
   @override
   void initState() {
     super.initState();
 
+    // Gradient background animation
+    _gradientController = AnimationController(
+      duration: const Duration(seconds: 4),
+      vsync: this,
+    )..repeat(reverse: true);
+    _gradientAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _gradientController, curve: Curves.easeInOut),
+    );
+
+    // Logo scale animation
     _logoController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
+    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
+    );
+    _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _logoController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
+    );
 
+    // Pulse animation for glow ring
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    // Text animation
     _textController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
-    _logoAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.elasticOut),
+    _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
     );
-
-    _textAnimation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _textController, curve: Curves.easeOut));
-
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
-          CurvedAnimation(parent: _textController, curve: Curves.easeOutBack),
-        );
+    _textSlide = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
+    );
 
     _startAnimations();
   }
 
   void _startAnimations() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
     _logoController.forward();
 
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 900));
+    if (!mounted) return;
     _textController.forward();
 
     await Future.delayed(const Duration(milliseconds: 2000));
-    if (mounted) {
-      Get.off(
-        () => const MainNavigationScreen(),
-        transition: Transition.fadeIn,
-        duration: const Duration(milliseconds: 800),
-      );
-    }
+    if (!mounted) return;
+    Get.off(
+      () => const MainNavigationScreen(),
+      transition: Transition.fadeIn,
+      duration: const Duration(milliseconds: 800),
+    );
   }
 
   @override
   void dispose() {
     _logoController.dispose();
     _textController.dispose();
+    _pulseController.dispose();
+    _gradientController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.primary,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
-          ),
-        ),
+      body: AnimatedBuilder(
+        animation: _gradientAnimation,
+        builder: (context, child) {
+          return Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.lerp(
+                    AppColors.primaryIndigo,
+                    AppColors.primaryViolet,
+                    _gradientAnimation.value,
+                  )!,
+                  Color.lerp(
+                    AppColors.primaryViolet,
+                    const Color(0xFF0F172A),
+                    _gradientAnimation.value,
+                  )!,
+                ],
+              ),
+            ),
+            child: child,
+          );
+        },
         child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final screenHeight = constraints.maxHeight;
-              final isSmallScreen = screenHeight < 600;
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Spacer(flex: 2),
 
-              return SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: screenHeight),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(height: isSmallScreen ? 20 : 40),
-
-                      // Logo Animation
-                      AnimatedBuilder(
-                        animation: _logoAnimation,
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale: _logoAnimation.value,
+              // Logo with glow ring
+              AnimatedBuilder(
+                animation: Listenable.merge([_logoScale, _pulseAnimation]),
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _logoScale.value,
+                    child: Opacity(
+                      opacity: _logoOpacity.value,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Outer glow ring
+                          Transform.scale(
+                            scale: _pulseAnimation.value,
                             child: Container(
-                              width: isSmallScreen ? 100 : 120,
-                              height: isSmallScreen ? 100 : 120,
+                              width: 150,
+                              height: 150,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.2),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha: 0.15),
                                   width: 2,
                                 ),
-                              ),
-                              child: Icon(
-                                Icons.access_time_rounded,
-                                size: isSmallScreen ? 50 : 60,
-                                color: Colors.white,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
-                      SizedBox(height: isSmallScreen ? 30 : 40),
-
-                      // App Name Animation
-                      AnimatedBuilder(
-                        animation: _textController,
-                        builder: (context, child) {
-                          return SlideTransition(
-                            position: _slideAnimation,
-                            child: FadeTransition(
-                              opacity: _textAnimation,
-                              child: Column(
-                                children: [
-                                  Text(
-                                    'CountEase',
-                                    style: TextStyle(
-                                      fontSize: isSmallScreen ? 28 : 36,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      letterSpacing: 2,
-                                      shadows: [
-                                        Shadow(
-                                          offset: const Offset(0, 2),
-                                          blurRadius: 4,
-                                          color: Colors.black.withOpacity(0.3),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(height: isSmallScreen ? 8 : 12),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 24,
-                                    ),
-                                    child: Text(
-                                      'Make Every Moment Count',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: isSmallScreen ? 14 : 16,
-                                        color: Colors.white.withOpacity(0.9),
-                                        letterSpacing: 1,
-                                        fontWeight: FontWeight.w300,
-                                      ),
-                                    ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primaryViolet
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 40,
+                                    spreadRadius: 10,
                                   ),
                                 ],
                               ),
                             ),
-                          );
-                        },
-                      ),
-
-                      SizedBox(height: isSmallScreen ? 60 : 80),
-
-                      // Loading Animation
-                      AnimatedBuilder(
-                        animation: _textController,
-                        builder: (context, child) {
-                          return FadeTransition(
-                            opacity: _textAnimation,
-                            child: SizedBox(
-                              width: isSmallScreen ? 35 : 40,
-                              height: isSmallScreen ? 35 : 40,
-                              child: const CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                                strokeWidth: 3,
+                          ),
+                          // Inner logo container
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.15),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 2,
                               ),
                             ),
-                          );
-                        },
-                      ),
-
-                      SizedBox(height: isSmallScreen ? 30 : 40),
-
-                      // Version Info
-                      AnimatedBuilder(
-                        animation: _textController,
-                        builder: (context, child) {
-                          return FadeTransition(
-                            opacity: _textAnimation,
-                            child: Text(
-                              'Version 1.0.0',
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 10 : 12,
-                                color: Colors.white.withOpacity(0.7),
-                                letterSpacing: 1,
-                              ),
+                            child: const Icon(
+                              Icons.hourglass_top_rounded,
+                              size: 56,
+                              color: Colors.white,
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
+                    ),
+                  );
+                },
+              ),
 
-                      SizedBox(height: isSmallScreen ? 20 : 40),
+              const SizedBox(height: 48),
+
+              // App name and tagline
+              SlideTransition(
+                position: _textSlide,
+                child: FadeTransition(
+                  opacity: _textOpacity,
+                  child: Column(
+                    children: [
+                      Text(
+                        'CountEase',
+                        style: theme.textTheme.displayMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.white.withValues(alpha: 0.1),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Text(
+                          'Make Every Moment Count',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w300,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              );
-            },
+              ),
+
+              const Spacer(flex: 2),
+
+              // Loading dots
+              FadeTransition(
+                opacity: _textOpacity,
+                child: _buildLoadingDots(),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Version
+              FadeTransition(
+                opacity: _textOpacity,
+                child: Text(
+                  'Version 1.0.0',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingDots() {
+    return SizedBox(
+      width: 60,
+      height: 20,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(3, (index) {
+          return AnimatedBuilder(
+            animation: _pulseController,
+            builder: (context, child) {
+              final delay = index * 0.2;
+              final value = ((_pulseController.value + delay) % 1.0);
+              final scale = 0.5 + (sin(value * pi) * 0.5);
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: 8 * scale,
+                height: 8 * scale,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.4 + (scale * 0.4)),
+                ),
+              );
+            },
+          );
+        }),
       ),
     );
   }
