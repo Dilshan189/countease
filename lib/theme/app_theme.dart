@@ -194,82 +194,82 @@ class AppTheme {
         : AppColors.textLightSecondary;
 
     return TextTheme(
-      displayLarge: GoogleFonts.outfit(
+      displayLarge: GoogleFonts.poppins(
         fontSize: 40,
         fontWeight: FontWeight.w800,
         color: primary,
         letterSpacing: -1.5,
       ),
-      displayMedium: GoogleFonts.outfit(
+      displayMedium: GoogleFonts.poppins(
         fontSize: 32,
         fontWeight: FontWeight.w700,
         color: primary,
         letterSpacing: -1,
       ),
-      displaySmall: GoogleFonts.outfit(
+      displaySmall: GoogleFonts.poppins(
         fontSize: 28,
         fontWeight: FontWeight.w700,
         color: primary,
         letterSpacing: -0.5,
       ),
-      headlineLarge: GoogleFonts.outfit(
+      headlineLarge: GoogleFonts.poppins(
         fontSize: 24,
         fontWeight: FontWeight.w700,
         color: primary,
         letterSpacing: -0.3,
       ),
-      headlineMedium: GoogleFonts.outfit(
+      headlineMedium: GoogleFonts.poppins(
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      headlineSmall: GoogleFonts.outfit(
+      headlineSmall: GoogleFonts.poppins(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      titleLarge: GoogleFonts.inter(
+      titleLarge: GoogleFonts.poppins(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      titleMedium: GoogleFonts.inter(
+      titleMedium: GoogleFonts.poppins(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      titleSmall: GoogleFonts.inter(
+      titleSmall: GoogleFonts.poppins(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      bodyLarge: GoogleFonts.inter(
+      bodyLarge: GoogleFonts.poppins(
         fontSize: 16,
         fontWeight: FontWeight.w400,
         color: primary,
       ),
-      bodyMedium: GoogleFonts.inter(
+      bodyMedium: GoogleFonts.poppins(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: secondary,
       ),
-      bodySmall: GoogleFonts.inter(
+      bodySmall: GoogleFonts.poppins(
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: secondary,
       ),
-      labelLarge: GoogleFonts.inter(
+      labelLarge: GoogleFonts.poppins(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: primary,
         letterSpacing: 0.5,
       ),
-      labelMedium: GoogleFonts.inter(
+      labelMedium: GoogleFonts.poppins(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: secondary,
       ),
-      labelSmall: GoogleFonts.inter(
+      labelSmall: GoogleFonts.poppins(
         fontSize: 10,
         fontWeight: FontWeight.w500,
         color: secondary,
