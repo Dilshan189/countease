@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:confetti/confetti.dart';
 import '../models/event_model.dart';
 import '../controllers/event_controller.dart';
 import '../widgets/custom_button.dart';
@@ -22,17 +23,24 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   final _eventController = Get.find<EventController>();
   Timer? _timer;
   Map<String, int> _timeRemaining = {};
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
     _updateCountdown();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateCountdown());
+    
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    if (widget.event.isToday) {
+      _confettiController.play();
+    }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -122,17 +130,37 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Immersive Hero Section
-            _buildHeroSection(theme, isDark),
-            // Details Section
-            _buildDetailsSection(theme, isDark),
-            // Actions
-            _buildActionButtons(theme),
-          ],
-        ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // Immersive Hero Section
+                _buildHeroSection(theme, isDark),
+                // Details Section
+                _buildDetailsSection(theme, isDark),
+                // Actions
+                _buildActionButtons(theme),
+              ],
+            ),
+          ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple,
+                Colors.amber,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -208,22 +236,28 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   Widget _buildCountdownDisplay(ThemeData theme) {
     if (widget.event.isToday) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: AppDecorations.innerGlass(borderRadius: 16),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.celebration_rounded, color: Colors.white, size: 28),
-            const SizedBox(width: 10),
-            Text(
-              'TODAY IS THE DAY! 🎉',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+      return GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          _confettiController.play();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: AppDecorations.innerGlass(borderRadius: 16),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.celebration_rounded, color: Colors.white, size: 28),
+              const SizedBox(width: 10),
+              Text(
+                'TODAY IS THE DAY! 🎉',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
