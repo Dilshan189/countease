@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// CountEase Premium Design System
 /// A curated, professional-grade theme with glassmorphism,
@@ -194,82 +193,97 @@ class AppTheme {
         : AppColors.textLightSecondary;
 
     return TextTheme(
-      displayLarge: GoogleFonts.poppins(
+      displayLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 40,
         fontWeight: FontWeight.w800,
         color: primary,
         letterSpacing: -1.5,
       ),
-      displayMedium: GoogleFonts.poppins(
+      displayMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 32,
         fontWeight: FontWeight.w700,
         color: primary,
         letterSpacing: -1,
       ),
-      displaySmall: GoogleFonts.poppins(
+      displaySmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 28,
         fontWeight: FontWeight.w700,
         color: primary,
         letterSpacing: -0.5,
       ),
-      headlineLarge: GoogleFonts.poppins(
+      headlineLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 24,
         fontWeight: FontWeight.w700,
         color: primary,
         letterSpacing: -0.3,
       ),
-      headlineMedium: GoogleFonts.poppins(
+      headlineMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 20,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      headlineSmall: GoogleFonts.poppins(
+      headlineSmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      titleLarge: GoogleFonts.poppins(
+      titleLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      titleMedium: GoogleFonts.poppins(
+      titleMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      titleSmall: GoogleFonts.poppins(
+      titleSmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      bodyLarge: GoogleFonts.poppins(
+      bodyLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 16,
         fontWeight: FontWeight.w400,
         color: primary,
       ),
-      bodyMedium: GoogleFonts.poppins(
+      bodyMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: secondary,
       ),
-      bodySmall: GoogleFonts.poppins(
+      bodySmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 12,
         fontWeight: FontWeight.w400,
         color: secondary,
       ),
-      labelLarge: GoogleFonts.poppins(
+      labelLarge: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: primary,
         letterSpacing: 0.5,
       ),
-      labelMedium: GoogleFonts.poppins(
+      labelMedium: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: secondary,
       ),
-      labelSmall: GoogleFonts.poppins(
+      labelSmall: TextStyle(
+        fontFamily: 'Poppins',
         fontSize: 10,
         fontWeight: FontWeight.w500,
         color: secondary,
@@ -283,6 +297,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Poppins',
       brightness: Brightness.light,
       textTheme: textTheme,
       colorScheme: const ColorScheme.light(
@@ -381,6 +396,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Poppins',
       brightness: Brightness.dark,
       textTheme: textTheme,
       colorScheme: const ColorScheme.dark(
